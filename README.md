@@ -34,11 +34,11 @@ On the Zumo 32U4 board, an XOR chip was used to reduce the required number of in
 2. Place the `Zumo328PControl` folder in your Arduino `libraries` directory.
 3. Restart the Arduino IDE and include the library in your sketch.
 
-# Encoder Frequency and Speed Calculation for Zumo Robot
+## Encoder Frequency and Speed Calculation for Zumo Robot
 
 This guide explains how to calculate the frequency and speed of a Zumo robot using encoders with a specified resolution.
 
-## 1. Frequency Calculation from Encoder Counts
+### 1. Frequency Calculation from Encoder Counts
 
 The encoder provides 12 counts per revolution (CPR) of the motor shaft when counting both edges of both channels. To compute the counts per revolution of the drive sprockets, you multiply the gearbox’s gear ratio by 12.
 
@@ -55,13 +55,13 @@ Where:
 - `CPR` is the counts per revolution of the drive sprockets (909.7 in this case).
 - The division by 60 converts RPM to revolutions per second.
 
-### Example
+#### Example
 
 For a motor running at 200 RPM, the encoder count frequency would be:
 
 f_enc = (200 * 909.7) / 60 ≈ 3032.33 counts/s
 
-## 2. Speed Calculation (Linear Speed)
+### 2. Speed Calculation (Linear Speed)
 
 To calculate the linear speed of the robot, you need to convert the number of rotations of the drive sprockets into linear motion. This can be done if you know the radius of the wheels.
 
@@ -71,7 +71,7 @@ Where:
 - `r` is the radius of the wheel.
 - `v` is the linear velocity of the robot in meters per second (m/s).
 
-### Example
+#### Example
 
 The radius of the Zumo wheel is `r = 0.039 m / 2 = 0.0195 m`.
 

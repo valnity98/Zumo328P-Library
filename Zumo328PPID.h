@@ -1,28 +1,25 @@
-/*! \file Zumo328PPID.h */
+#ifndef Zumo328PPID_H
+#define Zumo328PPID_H
 
-#pragma once
+#include <Arduino.h>
 
-#include <stdint.h>
+class Zumo328PPID {
+public:
+    Zumo328PPID(float maxSpeed = 200.0);  // Konstruktor mit optionaler maxSpeed
 
-/*! \brief Controls motor speed through PID Controller for a better line following */
+    void ControlSpeed(uint16_t& measured_position, uint16_t target_position, float kp, float kd);
 
-class Zumo328PPID
-{
-  public:
+    int32_t getLeftSpeed() const { return leftSpeed; }  // Getter für leftSpeed
+    int32_t getRightSpeed() const { return rightSpeed; }  // Getter für rightSpeed
 
-     static inline void init()
-    {
-        static bool initialized = false;
+private:
+    float maxSpeed;  // Maximale Geschwindigkeit
+    int32_t leftSpeed;
+    int32_t rightSpeed;
 
-        if (!initialized)
-        {
-            initialized = true;
-            init2();
-        }
-    }
-
-   
-
-  private:
-    static void init2();
+    long prevT = 0;  // Vorherige Zeit (Mikrosekunden)
+    int16_t lastError = 0;  // Der letzte Fehler
+    
 };
+
+#endif
