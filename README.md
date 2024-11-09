@@ -1,6 +1,6 @@
-# Zumo328PEncoders Library
+# Zumo328PControl Library
 
-**Zumo328PEncoders** is a library designed for reading and managing encoder counts on the Zumo robot using an ATmega328P microcontroller (such as an Arduino Uno). This library provides an efficient and reliable way to monitor the rotation of motors, enabling accurate tracking of movement and direction.
+**Zumo328PControl** is a library designed for reading and managing encoder counts on the Zumo robot using an ATmega328P microcontroller (such as an Arduino Uno). This library provides an efficient and reliable way to monitor the rotation of motors, enabling accurate tracking of movement and direction.
 
 ## Background
 
@@ -31,7 +31,7 @@ On the Zumo 32U4 board, an XOR chip was used to reduce the required number of in
 ## Installation
 
 1. Clone or download this repository.
-2. Place the `Zumo328PEncoders` folder in your Arduino `libraries` directory.
+2. Place the `Zumo328PControl` folder in your Arduino `libraries` directory.
 3. Restart the Arduino IDE and include the library in your sketch.
    
 ## Developers

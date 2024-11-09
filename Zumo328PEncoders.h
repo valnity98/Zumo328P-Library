@@ -47,23 +47,6 @@ public:
      *  the right-side encoder. */
     static int16_t getCountsAndResetRight();
 
-    /*! This function returns true if an error was detected on the left-side
-     * encoder.  It resets the error flag automatically, so it will only return
-     * true if an error was detected since the last time checkErrorLeft() was
-     * called.
-     *
-     * If an error happens, it means that both of the encoder outputs changed at
-     * the same time from the perspective of the ISR, so the ISR was unable to
-     * tell what direction the motor was moving, and the encoder count could be
-     * inaccurate.  The most likely cause for an error is that the interrupt
-     * service routine for the encoders could not be started soon enough.  If
-     * you get encoder errors, make sure you are not disabling interrupts for
-     * extended periods of time in your code. */
-    static bool checkErrorLeft();
-
-    /*! This function is just like checkErrorLeft() except it applies to
-     *  the right-side encoder. */
-    static bool checkErrorRight();
 
 private:
 
