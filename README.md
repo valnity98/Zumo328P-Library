@@ -25,7 +25,6 @@ On the Zumo 32U4 board, an XOR chip was used to reduce the required number of in
 
 - **Ported for ATmega328P**: Adapted specifically for use with the Arduino Uno and compatible boards.
 - **Encoder Count Monitoring**: Tracks both left and right encoders using interrupts for high accuracy.
-- **Error Detection**: Detects and reports any potential encoder errors to help ensure data reliability.
 - **Seamless Integration**: Uses `attachInterrupt()` for ease of compatibility with other code.
 
 ## Installation
