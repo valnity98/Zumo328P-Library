@@ -10,6 +10,9 @@
 
 static volatile bool lastLeftA;
 static volatile bool lastRightA;
+static volatile bool lastRightB;
+static volatile bool lastLeftB;
+
 
 // These count variables are uint16_t instead of int16_t because
 // signed integer overflow is undefined behavior in C++.
@@ -63,8 +66,9 @@ void Zumo328PEncoders::init2()
     // interrupts in case the interrupts fired by accident as we were enabling
     // them.
     lastLeftA = FastGPIO::Pin<LEFT_A>::isInputHigh();
+    lastLeftB = FastGPIO::Pin<LEFT_B>::isInputHigh();
     countLeft = 0;
-
+    lastRightB = FastGPIO::Pin<RIGHT_B>::isInputHigh();	
     lastRightA = FastGPIO::Pin<RIGHT_A>::isInputHigh();
     countRight = 0;
 }
