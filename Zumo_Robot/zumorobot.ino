@@ -1,52 +1,58 @@
 #include <ZumoShield.h>
 #include <Zumo328PEncoders.h>
-#include <Zumo328PPID.h>
-
-#define Kamera_THRESHOLD 1500 
 
 // Global Variables
 volatile bool dataAvailable = false;
-uint8_t buffer[2];
-int16_t received_X = 0;
+volatile int8_t buffer[2];
 
+//Define objects from classes
 ZumoMotors motors;
 Zumo328PEncoders encoders;
-Zumo328PPID PID;
 
 void setup() {
   Serial.begin(9600); 
-  UCSR0B |= (1 << RXCIE0);  // UART RX Interrupt aktivieren
-  sei();  // Globalen Interrupt aktivieren
+
+  // UART RX Complete Interrupt aktivieren je nach Mikrocontroller
+  #if defined(__AVR_ATmega328P__)
+    UCSR0B |= (1 << RXCIE0);  // RX Complete Interrupt Enable für ATmega328P
+  #elif defined(__AVR_ATmega32U4__)
+    UCSR1B |= (1 << RXCIE1);  // RX Complete Interrupt Enable für ATmega32U4 (USART1)
+  #else
+    #error "Mikrocontroller nicht unterstützt. Bitte UART-Initialisierung manuell prüfen."
+  #endif
+  // Globale Interrupts aktivieren
+  sei();  
 }
 
-// UART Empfangs-Interrupt-Service-Routine
+// UART RX ISR je nach Mikrocontroller
+#if defined(__AVR_ATmega328P__)
 ISR(USART_RX_vect) {
   static uint8_t index = 0;
-  buffer[index++] = UDR0;  // UART-Daten lesen
+  buffer[index++] = UDR0;  // UART-Daten lesen (ATmega328P)
   if (index >= 2) {  // Wenn 2 Bytes empfangen wurden
     index = 0;  // Index zurücksetzen
-    dataAvailable = true;  // Daten sind verfügbar
-  }
+    dataAvailable = true;  // Daten sind verfügbar  
 }
+#elif defined(__AVR_ATmega32U4__)
+ISR(USART1_RX_vect) {
+  static uint8_t index = 0;
+  buffer[index++] = UDR1;  // UART-Daten lesen ATmega32U4
+  if (index >= 2) {  // Wenn 2 Bytes empfangen wurden
+    index = 0;  // Index zurücksetzen
+    dataAvailable = true;  // Daten sind verfügbar  
+}
+#endif
 
 void loop() {
   if (dataAvailable) {
-    // Reconstruct the 16-bit number in little-endian format
-    received_X = buffer[1] << 8 | buffer[0];
-
-    // Debugging-Ausgabe
-    Serial.print("Received Data: ");
-    Serial.println(received_X);
 
     // Line-following-Funktion aufrufen
     follow_line();
 
     dataAvailable = false;  // Flag zurücksetzen
   }
-
-  // Hier kannst du weitere nicht-blockierende Aufgaben erledigen
 }
 
 void follow_line() {
-  motors.setSpeeds(MP.m1_speed, MP.m2_speed);
+  motors.setSpeeds(buffer[0], buffer[1]);
 }
