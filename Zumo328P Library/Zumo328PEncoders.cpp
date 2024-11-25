@@ -14,10 +14,10 @@ static volatile bool lastRightB;
 static volatile bool lastLeftB;
 
 
-// These count variables are uint16_t instead of int16_t because
+// These count variables are uint16_t instead of int32_t because
 // signed integer overflow is undefined behavior in C++.
-static volatile uint16_t countLeft;
-static volatile uint16_t countRight;
+static volatile int32_t countLeft;
+static volatile int32_t countRight;
 
 static void leftISR() {
     bool newLeftB = FastGPIO::Pin<LEFT_B>::isInputHigh();
@@ -59,6 +59,7 @@ void Zumo328PEncoders::init2()
     // Enable interrupt on PD2 and PD3 for the right encoder and left encoder.  We use attachInterrupt
     // instead of defining ISR(INTx_vect) ourselves so that this class will be
     // compatible with other code that uses attachInterrupt.
+    
     attachInterrupt(digitalPinToInterrupt(LEFT_A), leftISR, CHANGE);
     attachInterrupt(digitalPinToInterrupt(RIGHT_A), rightISR, CHANGE);
 
@@ -73,43 +74,43 @@ void Zumo328PEncoders::init2()
     countRight = 0;
 }
 
-int16_t Zumo328PEncoders::getCountsLeft()
+int32_t Zumo328PEncoders::getCountsLeft()
 {
     init();
 
     cli();
-    int16_t counts = countLeft;
+    int32_t counts = countLeft;
     sei();
     return counts;
 }
 
-int16_t Zumo328PEncoders::getCountsRight()
+int32_t Zumo328PEncoders::getCountsRight()
 {
     init();
 
     cli();
-    int16_t counts = countRight;
+    int32_t counts = countRight;
     sei();
     return counts;
 }
 
-int16_t Zumo328PEncoders::getCountsAndResetLeft()
+int32_t Zumo328PEncoders::getCountsAndResetLeft()
 {
     init();
 
     cli();
-    int16_t counts = countLeft;
+    int32_t counts = countLeft;
     countLeft = 0;
     sei();
     return counts;
 }
 
-int16_t Zumo328PEncoders::getCountsAndResetRight()
+int32_t Zumo328PEncoders::getCountsAndResetRight()
 {
     init();
 
     cli();
-    int16_t counts = countRight;
+    int32_t counts = countRight;
     countRight = 0;
     sei();
     return counts;
