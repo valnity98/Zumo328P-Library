@@ -19,6 +19,8 @@ Zumo328PEncoders encoders;
 
 void setup() {
   Serial.begin(115200);
+  encoders.getCountsAndResetLeft();
+  encoders.getCountsAndResetRight();
 }
 
 void loop() {
