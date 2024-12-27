@@ -23,14 +23,17 @@ static void leftISR() {
     bool newLeftB = FastGPIO::Pin<LEFT_B>::isInputHigh();
     bool newLeftA = FastGPIO::Pin<LEFT_A>::isInputHigh();
 
-    if(newLeftA != lastLeftA){
-        if(newLeftA != newLeftB){
-            countLeft ++;
-        }else{
-            countLeft --;
+   if (newLeftA != lastLeftA || newLeftB != lastLeftB) {
+        // Vorwärts: A wechselt und A != B, Rückwärts: A wechselt und A == B
+        if ((newLeftA == lastLeftB) != (newLeftB == lastLeftA)) {
+            countLeft++;
+        } else {
+            countLeft--;
         }
     }
+
     lastLeftA = newLeftA;
+    lastLeftB = newLeftB;
 }
 
 static void rightISR()
@@ -38,13 +41,16 @@ static void rightISR()
     bool newRightB = FastGPIO::Pin<RIGHT_B>::isInputHigh();
     bool newRightA = FastGPIO::Pin<RIGHT_A>::isInputHigh();
 
-   if(newRightA != lastRightA){
-        if(newRightA != newRightB){
-            countRight ++;
-        }else{
-            countRight --;
+    if (newRightA != lastRightA || newRightB != lastRightB) {
+        // Vorwärts: A wechselt und A != B, Rückwärts: A wechselt und A == B
+        if ((newRightA == lastRightB) != (newRightB == lastRightA)) {
+            countRight++;
+        } else {
+            countRight--;
         }
-   }
+    }
+
+    lastRightA = newRightA;
     lastRightB = newRightB;
 }
 
