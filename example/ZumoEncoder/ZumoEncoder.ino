@@ -20,16 +20,16 @@ void setup()
 void loop()
 {
 
-    int16_t countsLeft = encoders.getCountsLeft();
-    int16_t countsRight = encoders.getCountsRight();
+    int32_t countsLeft = encoders.getCountsLeft();
+    int32_t countsRight = encoders.getCountsRight();
 
-    // Send the information to the serial monitor also.
-    snprintf_P(report, sizeof(report),
-        PSTR("%6d %6d %1d %1d"),
-        countsLeft, countsRight, errorLeft, errorRight);
-    Serial.println(report);
+    // Send the information to the serial monitor also.  
+    Serial.print(countsLeft);
+    Serial.print(" , "); 
+    Serial.print(countsRight);
+    Serial.println();
   
 
-    motors.setSpeeds(200, 200);
+    motors.setSpeeds(100, 100);
     delay(2);
 }
