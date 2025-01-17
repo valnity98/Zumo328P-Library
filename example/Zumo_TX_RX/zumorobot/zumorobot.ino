@@ -31,6 +31,7 @@ void loop() {
       // Lese die nächsten 4 Bytes für left_speed und right_speed
       int16_t left_speed = Serial.read() | (Serial.read() << 8);
       int16_t right_speed = Serial.read() | (Serial.read() << 8);
+      int8_t reset_byte = Serial.read();
 
 // Setze die Geschwindigkeiten der Motoren
 #if defined(__AVR_ATmega328P__)
@@ -40,8 +41,12 @@ void loop() {
 #endif
 
       // Lese das End-Byte (ETX - 0x03)
-      if (Serial.read() == 0x03) {
+      if (Serial.read() == 0x03 && reset_byte == 0x11 ) {
         sendEncoderData();
+      }
+      else if(Serial.read() == 0x03 && reset_byte == 0x12){
+        encoders.getCountsAndResetLeft();
+        encoders.getCountsAndResetRight();
       }
     }
   }
