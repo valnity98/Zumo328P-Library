@@ -24,8 +24,8 @@ void setup() {
 }
 
 void loop() {
-  // Prüfe, ob genügend Bytes verfügbar sind (mindestens 5 Bytes: 1 Start-Byte, 4 Datenbytes, 1 End-Byte)
-  if (Serial.available() >= 5) {
+  // Prüfe, ob genügend Bytes verfügbar sind (mindestens 5 Bytes: 1 Start-Byte, 4 Datenbytes, 1 Reset_Byte 1 End-Byte)
+  if (Serial.available() >= 7) {
     // Lese das Start-Byte (STX - 0x02)
     if (Serial.read() == 0x02) {
       // Lese die nächsten 4 Bytes für left_speed und right_speed
@@ -33,22 +33,24 @@ void loop() {
       int16_t right_speed = Serial.read() | (Serial.read() << 8);
       int8_t reset_byte = Serial.read();
 
-// Setze die Geschwindigkeiten der Motoren
-#if defined(__AVR_ATmega328P__)
+      // Setze die Geschwindigkeiten der Motoren
+  #if defined(__AVR_ATmega328P__)
       motors_328P.setSpeeds(left_speed, right_speed);
-#elif defined(__AVR_ATmega32U4__)
+  #elif defined(__AVR_ATmega32U4__)
       motors_32u4.setSpeeds(left_speed, right_speed);
-#endif
+  #endif
 
-      // Lese das End-Byte (ETX - 0x03)
-      if (Serial.read() == 0x03 && reset_byte == 0x11 ) {
-        sendEncoderData();
+    // Lese das End-Byte (ETX - 0x03)
+      if (Serial.read() == 0x03) {
+        // Verarbeitung basierend auf reset_byte
+        if (reset_byte == 0x11) {
+          sendEncoderData();
+        } else if (reset_byte == 0x12) {
+          encoders.getCountsAndResetLeft();
+          encoders.getCountsAndResetRight();
+        }
       }
-      else if(Serial.read() == 0x03 && reset_byte == 0x12){
-        encoders.getCountsAndResetLeft();
-        encoders.getCountsAndResetRight();
-      }
-    }
+   }
   }
 }
 
