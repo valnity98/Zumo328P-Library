@@ -11,11 +11,11 @@ int16_t error = measured_position - target_position;
 // Get motor speed difference using proportional and derivative PID terms (the integral term is generally not very useful for line following).  
 if(aktiv){
     //currenttime in micorseconds
-long currT = micros(); 
+    long currT = micros(); 
 
-//deltaT in seconds
-deltaT = ((float) (currT-prevT))/ 1.0e6; 
-prevT = currT;
+    //deltaT in seconds
+    deltaT = ((float) (currT-prevT))/ 1.0e6; 
+    prevT = currT;
 }
 
 //Control Signal (motor speed difference)
