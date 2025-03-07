@@ -84,6 +84,57 @@ For a motor running at 400 RPM, the linear velocity would be:
 v = 2 * π * 0.0195 * (400 / 60) ≈ 3.27 m/s
 
 
+### 3. Rotation Speed Calculation (RPM and Angular Velocity)
+
+To compute the **rotation speed (RPM)** from encoder ticks, use the following formula:
+
+RPM = (N / CPR) * (60 / t)
+
+Where:
+- `N` = Number of **measured encoder ticks**.
+- `CPR` = **Counts per Revolution** of the encoder (**909.7** in this case).
+- `t` = Measurement **time in seconds**.
+- `60` = Converts **seconds to minutes**.
+
+#### Angular Velocity Calculation
+To convert **RPM to Angular Velocity** in **radians per second (rad/s)**:
+
+ω = (2 * π * RPM) / 60
+
+#### Example
+If the encoder records **5000 ticks** in **2 seconds**, the RPM would be:
+
+RPM = (5000 / 909.7) * (60 / 2)
+
+RPM = (5000 / 909.7) * 30 ≈ 164.7 RPM
+
+To get the **angular velocity**:
+
+ω = (2 * π * 164.7) / 60 ≈ 17.24 rad/s
+
+### 4. Distance Calculation
+
+To calculate the **distance traveled**, use the formula:
+
+s = (N / CPR) * U
+
+Where:
+- `s` = Distance traveled (**in cm or m**).
+- `N` = Number of **encoder ticks** counted.
+- `CPR` = Encoder's **Counts per Revolution**.
+- `U` = **Wheel circumference** calculated as:
+
+U = π * d = 2 * π * r
+
+#### Example
+- **CPR = 1000**
+- **Wheel diameter = 1.95 cm**
+- **Measured ticks = 5000**
+  
+Wheel circumference: U = π * 1.95 = 6.13 cm
+
+s = (5000 / 1000) * 6.13 = 30.65 cm
+
 ## Developers
 - **Mutasem Bader** 
 - **Felix Fritz Biermann**
