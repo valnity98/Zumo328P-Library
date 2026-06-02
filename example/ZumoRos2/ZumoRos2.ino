@@ -9,77 +9,86 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 
-// Define objects from classes
+// Packet layout (7 bytes TX from PC / 10 bytes RX to PC):
+//  TX: STX(0x02) | left_speed(int16 LE) | right_speed(int16 LE) | ctrl(0x11/0x12) | ETX(0x03)
+//  RX: STX(0x02) | right_enc(int32 LE) | left_enc(int32 LE) | ETX(0x03)
+//
+// ctrl 0x11 = normal run (send encoder reply)
+// ctrl 0x12 = reset encoders (no reply)
+
 #if defined(__AVR_ATmega328P__)
 ZumoMotors motors_328P;
 #elif defined(__AVR_ATmega32U4__)
 Zumo32U4Motors motors_32u4;
 #endif
+
 Zumo328PEncoders encoders;
 
+static const uint8_t TX_PACKET_SIZE = 7;
+
 void setup() {
-  Serial.begin(115200);
-  encoders.getCountsAndResetLeft();
-  encoders.getCountsAndResetRight();
+    Serial.begin(115200);
+    encoders.getCountsAndResetLeft();
+    encoders.getCountsAndResetRight();
 }
 
 void loop() {
-  // Prüfe, ob genügend Bytes verfügbar sind (mindestens 5 Bytes: 1 Start-Byte, 4 Datenbytes, 1 Reset_Byte 1 End-Byte)
-  if (Serial.available() >= 7) {
-    // Lese das Start-Byte (STX - 0x02)
-    if (Serial.read() == 0x02) {
-      // Lese die nächsten 4 Bytes für left_speed und right_speed
-      int16_t left_speed = Serial.read() | (Serial.read() << 8);
-      int16_t right_speed = Serial.read() | (Serial.read() << 8);
-      int8_t reset_byte = Serial.read();
+    if (Serial.available() < TX_PACKET_SIZE) {
+        return;
+    }
 
-      // Setze die Geschwindigkeiten der Motoren
-  #if defined(__AVR_ATmega328P__)
-      motors_328P.setSpeeds(left_speed, right_speed);
-  #elif defined(__AVR_ATmega32U4__)
-      motors_32u4.setSpeeds(left_speed, right_speed);
-  #endif
+    if (Serial.read() != 0x02) {
+        return;  // discard byte if not STX — re-sync on next iteration
+    }
 
-    // Lese das End-Byte (ETX - 0x03)
-      if (Serial.read() == 0x03) {
-        // Verarbeitung basierend auf reset_byte
-        if (reset_byte == 0x11) {
-          sendEncoderData();
-        } else if (reset_byte == 0x12) {
-          encoders.getCountsAndResetLeft();
-          encoders.getCountsAndResetRight();
-        }
-      }
-   }
-  }
+    // Read each byte explicitly as uint8_t to avoid sign-extension before shifting
+    uint8_t b0 = (uint8_t)Serial.read();
+    uint8_t b1 = (uint8_t)Serial.read();
+    uint8_t b2 = (uint8_t)Serial.read();
+    uint8_t b3 = (uint8_t)Serial.read();
+    uint8_t ctrl = (uint8_t)Serial.read();
+
+    if (Serial.read() != 0x03) {
+        return;  // ETX missing — discard
+    }
+
+    int16_t left_speed  = (int16_t)((uint16_t)b0 | ((uint16_t)b1 << 8));
+    int16_t right_speed = (int16_t)((uint16_t)b2 | ((uint16_t)b3 << 8));
+
+#if defined(__AVR_ATmega328P__)
+    motors_328P.setSpeeds(left_speed, right_speed);
+#elif defined(__AVR_ATmega32U4__)
+    motors_32u4.setSpeeds(left_speed, right_speed);
+#endif
+
+    if (ctrl == 0x11) {
+        sendEncoderData();
+    } else if (ctrl == 0x12) {
+        encoders.getCountsAndResetLeft();
+        encoders.getCountsAndResetRight();
+    }
 }
 
-// Encoder-Daten senden (für 32-Bit signed)
 void sendEncoderData() {
-  int32_t leftEncoder = encoders.getCountsLeft();
-  int32_t rightEncoder = encoders.getCountsRight();
+    int32_t rightEncoder = encoders.getCountsRight();
+    int32_t leftEncoder  = encoders.getCountsLeft();
 
-  uint8_t dataToSend[10];  // Array für 8-Bit-Werte (1 Byte STX, 8 Bytes Daten, 1 Byte ETX)
+    uint8_t packet[10];
+    packet[0] = 0x02;  // STX
 
-  // STX-Byte hinzufügen
-  dataToSend[0] = 0x02;
+    // Right encoder (bytes 1–4, little-endian)
+    packet[1] = (uint8_t)(rightEncoder        & 0xFF);
+    packet[2] = (uint8_t)((rightEncoder >> 8) & 0xFF);
+    packet[3] = (uint8_t)((rightEncoder >> 16) & 0xFF);
+    packet[4] = (uint8_t)((rightEncoder >> 24) & 0xFF);
 
-  // Encoder-Daten in das Array speichern (LSB bis MSB)
-  // Linker Encoder (4 Bytes)
-  dataToSend[1] = (uint8_t)(leftEncoder & 0xFF);          // Byte 0 (LSB)
-  dataToSend[2] = (uint8_t)((leftEncoder >> 8) & 0xFF);   // Byte 1
-  dataToSend[3] = (uint8_t)((leftEncoder >> 16) & 0xFF);  // Byte 2
-  dataToSend[4] = (uint8_t)((leftEncoder >> 24) & 0xFF);  // Byte 3 (MSB)
+    // Left encoder (bytes 5–8, little-endian)
+    packet[5] = (uint8_t)(leftEncoder        & 0xFF);
+    packet[6] = (uint8_t)((leftEncoder >> 8) & 0xFF);
+    packet[7] = (uint8_t)((leftEncoder >> 16) & 0xFF);
+    packet[8] = (uint8_t)((leftEncoder >> 24) & 0xFF);
 
-  // Rechter Encoder (4 Bytes)
-  dataToSend[5] = (uint8_t)(rightEncoder & 0xFF);          // Byte 0 (LSB)
-  dataToSend[6] = (uint8_t)((rightEncoder >> 8) & 0xFF);   // Byte 1
-  dataToSend[7] = (uint8_t)((rightEncoder >> 16) & 0xFF);  // Byte 2
-  dataToSend[8] = (uint8_t)((rightEncoder >> 24) & 0xFF);  // Byte 3 (MSB)
+    packet[9] = 0x03;  // ETX
 
-  // ETX-Byte hinzufügen (Ende des Textes)
-  dataToSend[9] = 0x03;
-
-  // Senden des gesamten Arrays über die serielle Schnittstelle
-  Serial.write(dataToSend, sizeof(dataToSend));
+    Serial.write(packet, sizeof(packet));
 }
