@@ -24,15 +24,6 @@ int32_t speedDifference = (int32_t)(kp * error)+(int32_t)(kd * ((error - lastErr
 lastError = error;
 
 // Get individual motor speeds.  The sign of speedDifference determines if the robot turns left or right.
-int32_t leftSpeed = (int32_t)maxSpeed + speedDifference;
-int32_t rightSpeed = (int32_t)maxSpeed - speedDifference;
-
-// Constrain our motor speeds to be between 0 and maxSpeed.
-// One motor will always be turning at maxSpeed, and the other
-// will be at maxSpeed-|speedDifference| if that is positive,
-// else it will be stationary.  For some applications, you
-// might want to allow the motor speed to go negative so that
-// it can spin in reverse.
-leftSpeed = constrain(leftSpeed, 0, (int16_t)maxSpeed);
-rightSpeed = constrain(rightSpeed, 0, (int16_t)maxSpeed);
+this->leftSpeed = constrain((int32_t)maxSpeed + speedDifference, 0, (int32_t)maxSpeed);
+this->rightSpeed = constrain((int32_t)maxSpeed - speedDifference, 0, (int32_t)maxSpeed);
 }

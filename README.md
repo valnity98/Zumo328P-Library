@@ -1,140 +1,116 @@
 # Zumo328P Library
 
-**Zumo328P** is a library designed for reading and managing encoder counts and controlling the speed of the Zumo Shield for Arduino v1.2 using the ATmega328P microcontroller (such as the Arduino Uno). This library provides an efficient and reliable way to monitor motor rotation, enabling accurate tracking of movement and direction.
+**Arduino encoder and PID library for the Zumo Shield (ATmega328P / Arduino Uno)**
+
+A port of the Pololu Zumo 32U4 encoder library, adapted for the Zumo Shield v1.2 with an ATmega328P microcontroller. Adds a discrete-time PID controller for motor speed and direction control, enabling accurate line-following and odometry on the Arduino Uno.
+
+---
 
 ## Background
 
-This encoder-based implementation is derived from the Zumo 32U4 library and specifically adapted for the Zumo Shield for Arduino v1.2. It is designed to work with external encoders such as the Magnetic Encoder Pair Kit for Micro Metal Gearmotors, 12 CPR, 2.7–18V from (https://www.pololu.com/product/3081) Pololu. The PID algorithm has been created to control motor direction and speed, improving line-following capabilities.
+The original Zumo 32U4 uses an on-board XOR chip to reduce the required interrupt pins for quadrature encoders. This library replaces that hardware XOR with a software equivalent, enabling the same encoder functionality on the Uno's two external-interrupt pins (D2 and D3). It is designed for use with the [Pololu Magnetic Encoder Pair Kit for Micro Metal Gearmotors, 12 CPR](https://www.pololu.com/product/3081).
 
-### Pin Configuration Changes
+---
 
-- **Left Encoder XORed Input**: Mapped to **Pin 2**.
-- **Right Encoder XORed Input**: Mapped to **Pin 3**.
-- **Left Encoder Input**: Mapped to **Pin 6**.
-- **Right Encoder Input**: Mapped to **Pin 12**.
-- **Note**:
-  - **Pin 2 and 3**: The use of I2C is no longer possible due to the use of external interrupts for reading encoder signals.
-  - **Pin 12**: Used for a user push button, so it can no longer be used for that purpose.
-  - **Pin 6**: Connected to the buzzer via a jumper; the jumper must be removed to enable encoder functionality.
+## Pin Mapping
 
-### Implementation Details
+| Signal | Arduino Uno Pin | Notes |
+|---|---|---|
+| Left encoder A (XOR input) | **D2** | External interrupt INT0 |
+| Right encoder A (XOR input) | **D3** | External interrupt INT1 |
+| Left encoder B | **D6** | Remove buzzer jumper on Zumo Shield |
+| Right encoder B | **D12** | Replaces the user push-button |
 
-On the Zumo 32U4 board, an XOR chip was used to reduce the required number of interrupt pins for encoders. This has been addressed in this library through software-based solutions, allowing the same functionality using fewer hardware resources. We use `attachInterrupt()` instead of directly defining `ISR(INTx_vect)` to ensure compatibility with other code that also utilizes `attachInterrupt()`.
+> **Note:** Using D2 and D3 for encoder interrupts disables I²C (SDA/SCL share the same lines on some shields). D12 can no longer be used as the user button.
+
+---
 
 ## Features
 
-- **Ported for ATmega328P**: Adapted specifically for use with the Arduino Uno and compatible boards.
-- **Encoder Count Monitoring**: Tracks both left and right encoders using interrupts for high accuracy.
-- **Seamless Integration**: Uses `attachInterrupt()` for ease of compatibility with other code.
+- Interrupt-driven quadrature decoding via `attachInterrupt()` for compatibility with other libraries
+- Signed 32-bit tick counters with atomic read (interrupt-safe `cli()`/`sei()`)
+- Discrete-time PID controller with proportional, integral, and derivative terms
+- Anti-windup integral clamping and derivative low-pass filter
+- Compatible with the ZumoRobot-ROS 2 project (binary serial protocol)
+
+---
 
 ## Installation
 
 1. Clone or download this repository.
-2. Attach the `Zumo328P` folder in your Arduino `libraries` directory.
-3. Download dependencies such as FAST GPIO, Zumo Shield from Library Manager
-4. Restart the Arduino IDE and include the library in your sketch.
+2. Copy the `Zumo328P Arduino/` folder into your Arduino `libraries/` directory.
+3. Install dependencies via Arduino Library Manager:
+   - **ZumoShield** (Pololu)
+   - **FastGPIO** (Pololu)
+4. Restart the Arduino IDE.
 
-## Encoder Frequency and Speed Calculation for Zumo Robot
+---
 
-This guide explains how to calculate the frequency and speed of a Zumo robot using encoders with a specified resolution.
+## Usage
 
-### 1. Frequency Calculation from Encoder Counts
+### Encoder counting
 
-The encoder provides 12 counts per revolution (CPR) of the motor shaft when counting both edges of both channels. To compute the counts per revolution of the drive sprockets, you multiply the gearbox’s gear ratio by 12.
+```cpp
+#include <Zumo328PEncoders.h>
 
-For example, if 75:1 motors are used (with a more accurate gear ratio of 75.81:1), the encoder provides approximately:
+Zumo328PEncoders encoders;
 
-CPR = 75.81 * 12 ≈ 909.7
+void loop() {
+    int32_t left  = encoders.getCountsLeft();
+    int32_t right = encoders.getCountsRight();
+    // or reset-on-read:
+    // int32_t left = encoders.getCountsAndResetLeft();
+}
+```
 
-To calculate the frequency of encoder counts per second, use the following formula:
+### ROS 2 integration example
 
-f_enc = (RPM * CPR) / 60
+See [`example/ZumoRos2/ZumoRos2.ino`](example/ZumoRos2/ZumoRos2.ino) for a full sketch that:
+- Receives motor speed commands from a ROS 2 node over serial (7-byte framed protocol)
+- Replies with encoder counts (10-byte framed protocol)
+- Supports encoder reset via control byte
 
-Where:
-- `RPM` is the revolutions per minute of the motor.
-- `CPR` is the counts per revolution of the drive sprockets (909.7 in this case).
-- The division by 60 converts RPM to revolutions per second.
+---
 
-#### Example
+## Encoder Maths Reference
 
-For a motor running at 200 RPM, the encoder count frequency would be:
+### Counts per Revolution
 
-f_enc = (200 * 909.7) / 60 ≈ 3032.33 counts/s
+```
+CPR = gear_ratio × 12 counts/rev
+    = 75.81 × 12 ≈ 909.7 counts/rev  (for the 75:1 motor, without XOR doubling)
+```
 
-### 2. Speed Calculation (Linear Speed)
+### Linear Speed
 
-To calculate the linear speed of the robot, you need to convert the number of rotations of the drive sprockets into linear motion. This can be done if you know the radius of the wheels.
+```
+v = 2π × r × (RPM / 60)        [m/s]
+  = 2π × 0.0195 × (RPM / 60)
+```
 
-v = 2 * π * r * (RPM / 60)
+### Distance from Ticks
 
-Where:
-- `r` is the radius of the wheel.
-- `v` is the linear velocity of the robot in meters per second (m/s).
+```
+s = (N / CPR) × (2π × r)       [m]
+```
 
-#### Example
+### RPM from Ticks
 
-The radius of the Zumo wheel is `r = 0.039 m / 2 = 0.0195 m`.
+```
+RPM = (N / CPR) × (60 / t)
+```
 
-For a motor running at 200 RPM, the linear velocity would be:
+where `N` = ticks counted, `t` = measurement interval in seconds.
 
-v = 2 * π * 0.0195 * (200 / 60) ≈ 1.63 m/s
+---
 
-For a motor running at 400 RPM, the linear velocity would be:
+## Contributors
 
-v = 2 * π * 0.0195 * (400 / 60) ≈ 3.27 m/s
-
-
-### 3. Rotation Speed Calculation (RPM and Angular Velocity)
-
-To compute the **rotation speed (RPM)** from encoder ticks, use the following formula:
-
-RPM = (N / CPR) * (60 / t)
-
-Where:
-- `N` = Number of **measured encoder ticks**.
-- `CPR` = **Counts per Revolution** of the encoder (**909.7** in this case).
-- `t` = Measurement **time in seconds**.
-- `60` = Converts **seconds to minutes**.
-
-#### Angular Velocity Calculation
-To convert **RPM to Angular Velocity** in **radians per second (rad/s)**:
-
-ω = (2 * π * RPM) / 60
-
-#### Example
-If the encoder records **5000 ticks** in **2 seconds**, the RPM would be:
-
-RPM = (5000 / 909.7) * (60 / 2)
-
-RPM = (5000 / 909.7) * 30 ≈ 164.7 RPM
-
-To get the **angular velocity**:
-
-ω = (2 * π * 164.7) / 60 ≈ 17.24 rad/s
-
-### 4. Distance Calculation
-
-To calculate the **distance traveled**, use the formula:
-
-s = (N / CPR) * U
-
-Where:
-- `s` = Distance traveled (**in cm or m**).
-- `N` = Number of **encoder ticks** counted.
-- `CPR` = Encoder's **Counts per Revolution**.
-- `U` = **Wheel circumference** calculated as:
-
-U = π * d = 2 * π * r
-
-#### Example
-- **CPR = 1000**
-- **Wheel diameter = 1.95 cm**
-- **Measured ticks = 5000**
-  
-Wheel circumference: U = π * 1.95 = 6.13 cm
-
-s = (5000 / 1000) * 6.13 = 30.65 cm
-
-## Developers
-- **Mutasem Bader** 
+- **Mutasem Bader**
 - **Felix Fritz Biermann**
+
+---
+
+## License
+
+Apache-2.0
