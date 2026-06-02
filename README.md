@@ -113,4 +113,6 @@ where `N` = ticks counted, `t` = measurement interval in seconds.
 
 ## License
 
-Apache-2.0
+Copyright (c) 2026 Mutasem Bader — All Rights Reserved.  
+Viewing is permitted. Copying, modifying, or submitting as own work is strictly prohibited.  
+See [LICENSE](LICENSE) for details.
