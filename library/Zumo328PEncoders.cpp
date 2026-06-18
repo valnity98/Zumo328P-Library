@@ -61,16 +61,18 @@ void Zumo328PEncoders::init2()
     // Enable interrupt on PD2 and PD3 for the right encoder and left encoder.  We use attachInterrupt
     // instead of defining ISR(INTx_vect) ourselves so that this class will be
     // compatible with other code that uses attachInterrupt.
-    
-    // Initialize state variables BEFORE attaching interrupts to avoid reading
-    // uninitialized values if an encoder pulse arrives during setup.
-    lastLeftA  = FastGPIO::Pin<LEFT_A>::isInputHigh();
-    lastRightA = FastGPIO::Pin<RIGHT_A>::isInputHigh();
-    countLeft  = 0;
-    countRight = 0;
-
     attachInterrupt(digitalPinToInterrupt(LEFT_A), leftISR, CHANGE);
     attachInterrupt(digitalPinToInterrupt(RIGHT_A), rightISR, CHANGE);
+
+    // Initialize variables AFTER attaching interrupts. If an interrupt fired
+    // accidentally during attachment, countLeft/countRight are reset to 0 here,
+    // cleaning up any spurious count. (Original Pololu design intent.)
+    lastLeftA  = FastGPIO::Pin<LEFT_A>::isInputHigh();
+    lastLeftB  = FastGPIO::Pin<LEFT_B>::isInputHigh();
+    countLeft  = 0;
+    lastRightA = FastGPIO::Pin<RIGHT_A>::isInputHigh();
+    lastRightB = FastGPIO::Pin<RIGHT_B>::isInputHigh();
+    countRight = 0;
 }
 
 int32_t Zumo328PEncoders::getCountsLeft()
