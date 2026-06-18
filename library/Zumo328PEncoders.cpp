@@ -62,18 +62,15 @@ void Zumo328PEncoders::init2()
     // instead of defining ISR(INTx_vect) ourselves so that this class will be
     // compatible with other code that uses attachInterrupt.
     
+    // Initialize state variables BEFORE attaching interrupts to avoid reading
+    // uninitialized values if an encoder pulse arrives during setup.
+    lastLeftA  = FastGPIO::Pin<LEFT_A>::isInputHigh();
+    lastRightA = FastGPIO::Pin<RIGHT_A>::isInputHigh();
+    countLeft  = 0;
+    countRight = 0;
+
     attachInterrupt(digitalPinToInterrupt(LEFT_A), leftISR, CHANGE);
     attachInterrupt(digitalPinToInterrupt(RIGHT_A), rightISR, CHANGE);
-
-    // Initialize the variables.  It's good to do this after enabling the
-    // interrupts in case the interrupts fired by accident as we were enabling
-    // them.
-    lastLeftA = FastGPIO::Pin<LEFT_A>::isInputHigh();
-    lastLeftB = FastGPIO::Pin<LEFT_B>::isInputHigh();
-    countLeft = 0;
-    lastRightB = FastGPIO::Pin<RIGHT_B>::isInputHigh();	
-    lastRightA = FastGPIO::Pin<RIGHT_A>::isInputHigh();
-    countRight = 0;
 }
 
 int32_t Zumo328PEncoders::getCountsLeft()

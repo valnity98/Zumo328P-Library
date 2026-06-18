@@ -1,8 +1,12 @@
 # Zumo328P Library
 
+> ⚠️ **This project is no longer maintained.** The repository is archived for reference only.
+
 **Arduino encoder and PID library for the Zumo Shield (ATmega328P / Arduino Uno)**
 
 A port of the Pololu Zumo 32U4 encoder library, adapted for the Zumo Shield v1.2 with an ATmega328P microcontroller. Adds a discrete-time PID controller for motor speed and direction control, enabling accurate line-following and odometry on the Arduino Uno.
+
+Developed as part of the Master's course *Autonomous Intelligent Systems* (Mechatronics & Robotics, Frankfurt UAS, WiSe 2024/2025).
 
 ---
 
@@ -38,7 +42,7 @@ The original Zumo 32U4 uses an on-board XOR chip to reduce the required interrup
 ## Installation
 
 1. Clone or download this repository.
-2. Copy the `Zumo328P Arduino/` folder into your Arduino `libraries/` directory.
+2. Copy the `library/` folder into your Arduino `libraries/` directory.
 3. Install dependencies via Arduino Library Manager:
    - **ZumoShield** (Pololu)
    - **FastGPIO** (Pololu)
@@ -65,7 +69,7 @@ void loop() {
 
 ### ROS 2 integration example
 
-See [`example/ZumoRos2/ZumoRos2.ino`](example/ZumoRos2/ZumoRos2.ino) for a full sketch that:
+See [`example/ZumoRos2/ZumoRos2.ino`](example/ZumoRos2/ZumoRos2.ino)  for a full sketch that:
 - Receives motor speed commands from a ROS 2 node over serial (7-byte framed protocol)
 - Replies with encoder counts (10-byte framed protocol)
 - Supports encoder reset via control byte
