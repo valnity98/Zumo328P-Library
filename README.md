@@ -69,7 +69,7 @@ void loop() {
 
 ### ROS 2 integration example
 
-See [`example/ZumoRos2/ZumoRos2.ino`](example/ZumoRos2/ZumoRos2.ino)  for a full sketch that:
+See [`example/ZumoRos2.ino`](example/ZumoRos2.ino)  for a full sketch that:
 - Receives motor speed commands from a ROS 2 node over serial (7-byte framed protocol)
 - Replies with encoder counts (10-byte framed protocol)
 - Supports encoder reset via control byte
@@ -105,13 +105,6 @@ RPM = (N / CPR) × (60 / t)
 ```
 
 where `N` = ticks counted, `t` = measurement interval in seconds.
-
----
-
-## Contributors
-
-- **Mutasem Bader**
-- **Felix Fritz Biermann**
 
 ---
 
