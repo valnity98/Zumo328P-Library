@@ -108,13 +108,6 @@ where `N` = ticks counted, `t` = measurement interval in seconds.
 
 ---
 
-## Contributors
-
-- **Mutasem Bader**
-- **Felix Fritz Biermann**
-
----
-
 ## License
 
 Copyright (c) 2026 Mutasem Bader — All Rights Reserved.  
