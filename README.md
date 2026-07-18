@@ -2,7 +2,7 @@
 
 > ⚠️ **This project is no longer maintained.** The repository is archived for reference only.
 
-**Arduino encoder and PID library for the Zumo Shield (ATmega328P / Arduino Uno)**
+**Arduino encoder and PID library for the Zumo Shield (ATmega328P / Arduino leonardo )**
 
 A port of the Pololu Zumo 32U4 encoder library, adapted for the Zumo Shield v1.2 with an ATmega328P microcontroller. Adds a discrete-time PID controller for motor speed and direction control, enabling accurate line-following and odometry on the Arduino Uno.
 
