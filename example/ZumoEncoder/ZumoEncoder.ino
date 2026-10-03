@@ -1,5 +1,5 @@
 
-/* This program shows how to read the encoders on the Zumo 32U4.
+/* This program shows how to read the encoders on the Zumo Shield.
 The encoders can tell you how far, and in which direction each
 motor has turned.
 */
@@ -9,8 +9,6 @@ motor has turned.
 
 Zumo328PEncoders encoders;
 ZumoMotors motors;
-
-char report[80];
 
 void setup()
 {
