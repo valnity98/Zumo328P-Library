@@ -1,5 +1,6 @@
 // Zumo328PEncoders.cpp - interrupt-driven quadrature encoder counting (Zumo Shield, Arduino Leonardo)
 // Author: Mutasem Bader, Felix Fritz Biermann
+// Derived from Zumo32U4Encoders by Pololu Corporation (MIT License), see THIRD-PARTY-NOTICES.md
 #include <Zumo328PEncoders.h>
 #include <FastGPIO.h>
 #include <avr/interrupt.h>
