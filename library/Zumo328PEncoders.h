@@ -1,3 +1,4 @@
+// Derived from Zumo32U4Encoders by Pololu Corporation (MIT License), see THIRD-PARTY-NOTICES.md
 /*! \file Zumo328PEncoders.h */
 
 #pragma once
