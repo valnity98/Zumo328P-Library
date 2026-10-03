@@ -57,7 +57,7 @@ void Zumo328PEncoders::init2()
     FastGPIO::Pin<RIGHT_A>::setInputPulledUp();
     FastGPIO::Pin<RIGHT_B>::setInputPulledUp();
 
-    // Enable interrupt on PD2 and PD3 for the right encoder and left encoder.  We use attachInterrupt
+    // Enable the external interrupts on D3 (INT0, right encoder) and D2 (INT1, left encoder).  We use attachInterrupt
     // instead of defining ISR(INTx_vect) ourselves so that this class will be
     // compatible with other code that uses attachInterrupt.
     attachInterrupt(digitalPinToInterrupt(LEFT_A), leftISR, CHANGE);
