@@ -1,10 +1,10 @@
 # Zumo328P Library
 
-> ⚠️ **This project is no longer maintained.** The repository is archived for reference only.
+> **Status: completed.** University project (WiSe 2024/25), kept as a reference implementation.
 
-**Arduino encoder and PID library for the Zumo Shield (ATmega328P / Arduino leonardo )**
+**Arduino encoder and PID library for the Zumo Shield (Arduino Leonardo / ATmega32U4)**
 
-A port of the Pololu Zumo 32U4 encoder library, adapted for the Zumo Shield v1.2 with an ATmega328P microcontroller. Adds a discrete-time PID controller for motor speed and direction control, enabling accurate line-following and odometry on the Arduino leonardo.
+A port of the Pololu Zumo 32U4 encoder library, adapted for the Zumo Shield v1.2 driven by an Arduino Leonardo (ATmega32U4). The library name comes from the Zumo 328P shield variant, and it also compiles for the ATmega328P. Adds a discrete-time PD controller for steering, enabling accurate line-following and odometry on the Arduino Leonardo.
 
 Developed as part of the Master's course *Autonomous Intelligent Systems* (Mechatronics & Robotics, Frankfurt UAS, WiSe 2024/2025).
 
@@ -12,16 +12,16 @@ Developed as part of the Master's course *Autonomous Intelligent Systems* (Mecha
 
 ## Background
 
-The original Zumo 32U4 uses an on-board XOR chip to reduce the required interrupt pins for quadrature encoders. This library replaces that hardware XOR with a software equivalent, enabling the same encoder functionality on the Uno's two external-interrupt pins (D2 and D3). It is designed for use with the [Pololu Magnetic Encoder Pair Kit for Micro Metal Gearmotors, 12 CPR](https://www.pololu.com/product/3081).
+The original Zumo 32U4 uses an on-board XOR chip to reduce the required interrupt pins for quadrature encoders. This library replaces that hardware XOR with a software equivalent, enabling the same encoder functionality on the Leonardo's external-interrupt pins D2 and D3. It is designed for use with the [Pololu Magnetic Encoder Pair Kit for Micro Metal Gearmotors, 12 CPR](https://www.pololu.com/product/3081).
 
 ---
 
 ## Pin Mapping
 
-| Signal | Arduino leonardo Pin | Notes |
+| Signal | Arduino Leonardo Pin | Notes |
 |---|---|---|
-| Left encoder A (XOR input) | **D2** | External interrupt INT0 |
-| Right encoder A (XOR input) | **D3** | External interrupt INT1 |
+| Left encoder A (XOR input) | **D2** | External interrupt INT1 |
+| Right encoder A (XOR input) | **D3** | External interrupt INT0 |
 | Left encoder B | **D6** | Remove buzzer jumper on Zumo Shield |
 | Right encoder B | **D12** | Replaces the user push-button |
 
@@ -33,8 +33,8 @@ The original Zumo 32U4 uses an on-board XOR chip to reduce the required interrup
 
 - Interrupt-driven quadrature decoding via `attachInterrupt()` for compatibility with other libraries
 - Signed 32-bit tick counters with atomic read (interrupt-safe `cli()`/`sei()`)
-- Discrete-time PID controller with proportional, integral, and derivative terms
-- Anti-windup integral clamping and derivative low-pass filter
+- Discrete-time PD controller (proportional + derivative) that turns the lateral line position error into left/right motor speeds
+  (the full PID with anti-windup runs on the PC side, in the ROS 2 package)
 - Compatible with the ZumoRobot-ROS 2 project (binary serial protocol)
 
 ---
