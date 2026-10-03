@@ -18,7 +18,7 @@ private:
     int32_t leftSpeed;
     int32_t rightSpeed;
 
-    long    prevT     = 0;
+    unsigned long prevT = 0;
     bool    firstCall = true;  // skip spurious large deltaT on very first call
     int16_t lastError = 0;
 };
