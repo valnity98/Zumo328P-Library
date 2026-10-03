@@ -1,21 +1,19 @@
+// Zumo328PEncoders.cpp - interrupt-driven quadrature encoder counting (Zumo Shield, Arduino Leonardo)
+// Author: Mutasem Bader, Felix Fritz Biermann
 #include <Zumo328PEncoders.h>
 #include <FastGPIO.h>
 #include <avr/interrupt.h>
 #include <Arduino.h>
 
-#define LEFT_A   2 // Changed from 8 to 2 (Pin 2 on Arduino Uno)
-#define LEFT_B     6 // Changed from E2 to 6 (Pin 6 on Arduino Uno)
-#define RIGHT_A  3 // Changed from 7 to 3 (Pin 3 on Arduino Uno)
-#define RIGHT_B    12  // Changed from 23 to 12 (Pin 12 on Arduino Uno)
+#define LEFT_A   2 // Changed from 8 to 2 (Pin 2 on Arduino Leonardo)
+#define LEFT_B     6 // Changed from E2 to 6 (Pin 6 on Arduino Leonardo)
+#define RIGHT_A  3 // Changed from 7 to 3 (Pin 3 on Arduino Leonardo)
+#define RIGHT_B    12  // Changed from 23 to 12 (Pin 12 on Arduino Leonardo)
 
 static volatile bool lastLeftA;
 static volatile bool lastRightA;
-static volatile bool lastRightB;
-static volatile bool lastLeftB;
 
-
-// These count variables are uint16_t instead of int32_t because
-// signed integer overflow is undefined behavior in C++.
+// Tick counters, written in the ISRs and read with interrupts disabled.
 static volatile int32_t countLeft;
 static volatile int32_t countRight;
 
@@ -68,10 +66,8 @@ void Zumo328PEncoders::init2()
     // accidentally during attachment, countLeft/countRight are reset to 0 here,
     // cleaning up any spurious count. (Original Pololu design intent.)
     lastLeftA  = FastGPIO::Pin<LEFT_A>::isInputHigh();
-    lastLeftB  = FastGPIO::Pin<LEFT_B>::isInputHigh();
     countLeft  = 0;
     lastRightA = FastGPIO::Pin<RIGHT_A>::isInputHigh();
-    lastRightB = FastGPIO::Pin<RIGHT_B>::isInputHigh();
     countRight = 0;
 }
 

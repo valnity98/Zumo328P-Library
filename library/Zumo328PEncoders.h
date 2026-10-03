@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-/*! \brief This class is ported to work on the Zumo 328P (Arduino UNO).*/
+/*! \brief This class is ported to work on the Zumo 328P (Arduino Leonardo).*/
 
 class Zumo328PEncoders
 {
