@@ -113,6 +113,15 @@ where `N` = ticks counted, `t` = measurement interval in seconds.
 
 ---
 
+## Known limitations
+
+- **No command timeout in `ZumoRos2.ino`.** The motors keep the last commanded speed until the next packet arrives, for example if the PC or the serial link fails.
+- **Motor class on the ATmega32U4.** `ZumoRos2.ino` uses `Zumo32U4Motors` from the Zumo 32U4 library, which drives the direction pins 15/16 of the Zumo 32U4 robot. The Zumo Shield v1.2 uses pins 7/8 (class `ZumoMotors` of the ZumoShield library), so reverse driving with this sketch on a shield has not been verified.
+- **The serial protocol has no checksum.** Frames are recognised by their fixed length and the `0x02`/`0x03` markers; these byte values can also occur in the payload (for example a speed of 2).
+- **Counts per revolution has to be calibrated** for the individual robot (see above).
+
+---
+
 ## Third-party code
 
 `library/Zumo328PEncoders.cpp` and `library/Zumo328PEncoders.h` are derived from `Zumo32U4Encoders` in Pololu's [zumo-32u4-arduino-library](https://github.com/pololu/zumo-32u4-arduino-library) (MIT License, Copyright (c) 2015-2022 Pololu Corporation). See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the license text.
