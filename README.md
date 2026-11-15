@@ -1,20 +1,14 @@
 # Zumo328P Library
 
-> **Status: completed.** University project (WiSe 2024/25), kept as a reference implementation.
+An Arduino library for the wheel encoders of the Pololu Zumo Shield on an Arduino Leonardo (ATmega32U4), with a small PD controller for steering.
 
-**Arduino encoder and PD-controller library for the Zumo Shield (Arduino Leonardo / ATmega32U4)**
+It is a port of Pololu's Zumo 32U4 encoder library. I adapted it to the Zumo Shield v1.2, where the encoders are read differently, and added a discrete-time PD controller that I used for line following. The code also compiles for the ATmega328P. The controller class is still called `Zumo328PPID`, but it has a proportional and a derivative term and no integral term.
 
-A port of the Pololu Zumo 32U4 encoder library, adapted for the Zumo Shield v1.2 driven by an Arduino Leonardo (ATmega32U4). It also compiles for the ATmega328P. Adds a discrete-time PD controller for steering, enabling accurate line-following and odometry on the Arduino Leonardo. The controller class is named `Zumo328PPID`; it implements a PD controller (proportional and derivative term, no integral term).
-
-Developed as part of the Master's course *Autonomous Intelligent Systems* (Mechatronics & Robotics, Frankfurt UAS, WiSe 2024/2025).
-
----
+Written for the master's course *Autonomous Intelligent Systems* at Frankfurt UAS (winter semester 2024/25). The project is finished. The robot it was written for is in [ZumoRobot-ROS2](https://github.com/valnity98/ZumoRobot-ROS2).
 
 ## Background
 
 Pololu's `Zumo32U4Encoders` reads the encoders of the Zumo 32U4, where an XOR of the two encoder channels is routed to a single interrupt pin. This library does not need an XOR chip: it attaches an external interrupt (`CHANGE`) to channel A of each encoder (D2 and D3 on the Leonardo) and reads channel B inside the interrupt service routine to determine the direction of rotation. Only the edges of channel A are counted (see [Counts per Revolution](#counts-per-revolution)). It is designed for use with the [Pololu Magnetic Encoder Pair Kit for Micro Metal Gearmotors, 12 CPR](https://www.pololu.com/product/3081).
-
----
 
 ## Pin Mapping
 
@@ -27,8 +21,6 @@ Pololu's `Zumo32U4Encoders` reads the encoders of the Zumo 32U4, where an XOR of
 
 > **Note:** Using D2 and D3 for encoder interrupts disables I²C (SDA/SCL share the same lines on some shields). D12 can no longer be used as the user button.
 
----
-
 ## Features
 
 - Interrupt-driven quadrature decoding via `attachInterrupt()` (edges of channel A, direction from channel B) for compatibility with other libraries
@@ -36,8 +28,6 @@ Pololu's `Zumo32U4Encoders` reads the encoders of the Zumo 32U4, where an XOR of
 - Discrete-time PD controller (proportional + derivative) that turns the lateral line position error into left/right motor speeds
   (the full PID with anti-windup runs on the PC side, in the ROS 2 package [ZumoRobot-ROS2](https://github.com/valnity98/ZumoRobot-ROS2))
 - Compatible with the [ZumoRobot-ROS2](https://github.com/valnity98/ZumoRobot-ROS2) project (binary serial protocol)
-
----
 
 ## Installation
 
@@ -48,8 +38,6 @@ Pololu's `Zumo32U4Encoders` reads the encoders of the Zumo 32U4, where an XOR of
    - **FastGPIO** (Pololu)
    - **Zumo32U4** (Pololu), only for `example/ZumoRos2/ZumoRos2.ino` on the ATmega32U4
 4. Restart the Arduino IDE.
-
----
 
 ## Usage
 
@@ -74,8 +62,6 @@ See [`example/ZumoRos2/ZumoRos2.ino`](example/ZumoRos2/ZumoRos2.ino) for a full 
 - Receives motor speed commands from a ROS 2 node over serial (7-byte framed protocol)
 - Replies with encoder counts (10-byte framed protocol)
 - Supports encoder reset via control byte
-
----
 
 ## Encoder Maths Reference
 
@@ -111,8 +97,6 @@ RPM = (N / CPR) × (60 / t)
 
 where `N` = ticks counted, `t` = measurement interval in seconds.
 
----
-
 ## Known limitations
 
 - **No command timeout in `ZumoRos2.ino`.** The motors keep the last commanded speed until the next packet arrives, for example if the PC or the serial link fails.
@@ -120,16 +104,12 @@ where `N` = ticks counted, `t` = measurement interval in seconds.
 - **The serial protocol has no checksum.** Frames are recognised by their fixed length and the `0x02`/`0x03` markers; these byte values can also occur in the payload (for example a speed of 2).
 - **Counts per revolution has to be calibrated** for the individual robot (see above).
 
----
-
 ## Third-party code
 
 `library/Zumo328PEncoders.cpp` and `library/Zumo328PEncoders.h` are derived from `Zumo32U4Encoders` in Pololu's [zumo-32u4-arduino-library](https://github.com/pololu/zumo-32u4-arduino-library) (MIT License, Copyright (c) 2015-2022 Pololu Corporation). See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the license text.
 
----
-
 ## License
 
-Copyright (c) 2026 Mutasem Bader — All Rights Reserved.  
+Copyright (c) 2026 Mutasem Bader. All rights reserved.  
 Viewing is permitted. Copying, modifying, or submitting as own work is strictly prohibited.  
 See [LICENSE](LICENSE) for details.
