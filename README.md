@@ -19,12 +19,12 @@ Pololu's `Zumo32U4Encoders` reads the encoders of the Zumo 32U4, where an XOR of
 | Left encoder B | **D6** | Read in the ISR to determine direction. Remove buzzer jumper on Zumo Shield |
 | Right encoder B | **D12** | Read in the ISR to determine direction. Replaces the user push-button |
 
-> **Note:** Using D2 and D3 for encoder interrupts disables I²C (SDA/SCL share the same lines on some shields). D12 can no longer be used as the user button.
+> **Note:** On the Arduino Leonardo, D2 and D3 are also the I²C lines (SDA and SCL). With the encoders on these pins, I²C cannot be used, and that includes the compass and gyro on the Zumo Shield. D12 can no longer be used as the user button.
 
 ## Features
 
 - Interrupt-driven quadrature decoding via `attachInterrupt()` (edges of channel A, direction from channel B) for compatibility with other libraries
-- Signed 32-bit tick counters with atomic read (interrupt-safe `cli()`/`sei()`)
+- Signed 32-bit tick counters with atomic read (interrupts are disabled for the read and the previous interrupt state is restored afterwards)
 - Discrete-time PD controller (proportional + derivative) that turns the lateral line position error into left/right motor speeds
   (the full PID with anti-windup runs on the PC side, in the ROS 2 package [ZumoRobot-ROS2](https://github.com/valnity98/ZumoRobot-ROS2))
 - Compatible with the [ZumoRobot-ROS2](https://github.com/valnity98/ZumoRobot-ROS2) project (binary serial protocol)
@@ -55,6 +55,22 @@ void loop() {
     // int32_t left = encoders.getCountsAndResetLeft();
 }
 ```
+
+### PD steering
+
+```cpp
+#include <Zumo328PPID.h>
+
+Zumo328PPID pd(200.0);  // base speed and speed limit
+
+void loop() {
+    // position: measured line position, 2000: position of the line centre
+    pd.ControlSpeed(position, 2000, 0.25, 0.01);
+    motors.setSpeeds(pd.getLeftSpeed(), pd.getRightSpeed());
+}
+```
+
+The gains in this snippet are placeholders; tune `kp` and `kd` on your robot. The time step for the derivative is measured with `micros()` between two calls.
 
 ### ROS 2 integration example
 
