@@ -7,7 +7,7 @@ on a free surface before you power it.
 */
 
 #include <Zumo328PEncoders.h>
-#include <ZumoShield.h>
+#include <ZumoMotors.h>
 
 Zumo328PEncoders encoders;
 ZumoMotors motors;

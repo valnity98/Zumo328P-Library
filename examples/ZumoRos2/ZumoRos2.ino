@@ -2,14 +2,14 @@
 // (motor speeds in, encoder counts out). Used by the ZumoRobot-ROS2 project.
 // Author: Mutasem Bader, Felix Fritz Biermann
 
-#if defined(__AVR_ATmega328P__)
-#include <ZumoShield.h>
-#elif defined(__AVR_ATmega32U4__)
-#include <Zumo32U4.h>
-#else
+#if !defined(__AVR_ATmega328P__) && !defined(__AVR_ATmega32U4__)
 #error "This sketch supports the ATmega328P and the ATmega32U4 only."
 #endif
 
+// ZumoMotors from the ZumoShield library drives the motor driver of the Zumo
+// Shield (direction pins 7 and 8, PWM on pins 9 and 10) on both the
+// Arduino Uno (ATmega328P) and the Arduino Leonardo (ATmega32U4).
+#include <ZumoMotors.h>
 #include <Zumo328PEncoders.h>
 
 // Packet layout:
@@ -20,12 +20,7 @@
 // ctrl 0x12 = reset encoders (no reply)
 // The motor speeds are applied for every valid packet, whatever ctrl is.
 
-#if defined(__AVR_ATmega328P__)
-ZumoMotors motors_328P;
-#elif defined(__AVR_ATmega32U4__)
-Zumo32U4Motors motors_32u4;
-#endif
-
+ZumoMotors motors;
 Zumo328PEncoders encoders;
 
 static const uint8_t COMMAND_PACKET_SIZE = 7;  // PC -> Arduino
@@ -60,11 +55,7 @@ void loop() {
     int16_t left_speed  = (int16_t)((uint16_t)b0 | ((uint16_t)b1 << 8));
     int16_t right_speed = (int16_t)((uint16_t)b2 | ((uint16_t)b3 << 8));
 
-#if defined(__AVR_ATmega328P__)
-    motors_328P.setSpeeds(left_speed, right_speed);
-#elif defined(__AVR_ATmega32U4__)
-    motors_32u4.setSpeeds(left_speed, right_speed);
-#endif
+    motors.setSpeeds(left_speed, right_speed);
 
     if (ctrl == 0x11) {
         sendEncoderData();
