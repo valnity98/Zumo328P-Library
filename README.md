@@ -2,7 +2,7 @@
 
 An Arduino library for the wheel encoders of the Pololu Zumo Shield on an Arduino Leonardo (ATmega32U4), with a small PD controller for steering.
 
-It is a port of Pololu's Zumo 32U4 encoder library. I adapted it to the Zumo Shield v1.2, where the encoders are read differently, and added a discrete-time PD controller that I used for line following. The code also compiles for the ATmega328P. The controller class is still called `Zumo328PPID`, but it has a proportional and a derivative term and no integral term.
+It is a port of Pololu's Zumo 32U4 encoder library. I adapted it to the Zumo Shield v1.2, where the encoders are read differently, and added a discrete-time PD controller class for steering along a line. The ROS 2 robot does not use it, because it runs its PID controller on the PC. The code also compiles for the ATmega328P. The controller class is still called `Zumo328PPID`, but it has a proportional and a derivative term and no integral term.
 
 Written for the master's course *Autonomous Intelligent Systems* at Frankfurt UAS (winter semester 2024/25). The project is finished. The robot it was written for is in [ZumoRobot-ROS2](https://github.com/valnity98/ZumoRobot-ROS2).
 
@@ -16,9 +16,11 @@ Pololu's `Zumo32U4Encoders` reads the encoders of the Zumo 32U4, where an XOR of
 |---|---|---|
 | Left encoder A | **D2** | External interrupt INT1, triggers on `CHANGE` |
 | Right encoder A | **D3** | External interrupt INT0, triggers on `CHANGE` |
-| Left encoder B | **D6** | Read in the ISR to determine direction. Remove buzzer jumper on Zumo Shield |
+| Left encoder B | **D6** | Read in the ISR to determine direction. On the Leonardo the shield's buzzer is wired to D6 through the jumper labelled `32U4`: remove it |
 | Right encoder B | **D12** | Read in the ISR to determine direction. Replaces the user push-button |
 
+> **Note:** On an Arduino Uno (ATmega328P) the buzzer jumper labelled `328P` connects the buzzer to D3 (right encoder A), so remove that one as well.
+>
 > **Note:** On the Arduino Leonardo, D2 and D3 are also the I²C lines (SDA and SCL). With the encoders on these pins, I²C cannot be used, and that includes the compass and gyro on the Zumo Shield. D12 can no longer be used as the user button.
 
 ## Features
@@ -32,11 +34,10 @@ Pololu's `Zumo32U4Encoders` reads the encoders of the Zumo 32U4, where an XOR of
 ## Installation
 
 1. Clone or download this repository.
-2. Copy the `library/` folder into your Arduino `libraries/` directory.
+2. Copy the `library/` folder into your Arduino `libraries/` directory and rename it to `Zumo328P`.
 3. Install dependencies via Arduino Library Manager:
-   - **ZumoShield** (Pololu)
-   - **FastGPIO** (Pololu)
-   - **Zumo32U4** (Pololu), only for `example/ZumoRos2/ZumoRos2.ino` on the ATmega32U4
+   - **FastGPIO** (Pololu), used by the library itself
+   - **ZumoShield** (Pololu), provides `ZumoMotors` for the example sketches
 4. Restart the Arduino IDE.
 
 ## Usage
@@ -64,8 +65,9 @@ void loop() {
 Zumo328PPID pd(200.0);  // base speed and speed limit
 
 void loop() {
-    // position: measured line position, 2000: position of the line centre
-    pd.ControlSpeed(position, 2000, 0.25, 0.01);
+    // position: measured line position, 2500: centre of the line range
+    // (the 6-sensor Zumo reflectance array reports 0 to 5000)
+    pd.ControlSpeed(position, 2500, 0.25, 0.01);
     motors.setSpeeds(pd.getLeftSpeed(), pd.getRightSpeed());
 }
 ```
@@ -74,10 +76,12 @@ The gains in this snippet are placeholders; tune `kp` and `kd` on your robot. Th
 
 ### ROS 2 integration example
 
-See [`example/ZumoRos2/ZumoRos2.ino`](example/ZumoRos2/ZumoRos2.ino) for a full sketch that:
+See [`examples/ZumoRos2/ZumoRos2.ino`](examples/ZumoRos2/ZumoRos2.ino) for a full sketch that:
 - Receives motor speed commands from a ROS 2 node over serial (7-byte framed protocol)
 - Replies with encoder counts (10-byte framed protocol)
 - Supports encoder reset via control byte
+
+The sketch drives the motors with `ZumoMotors` from the ZumoShield library (direction pins 7 and 8, PWM on pins 9 and 10) on both the Uno and the Leonardo.
 
 ## Encoder Maths Reference
 
@@ -96,8 +100,10 @@ Calibrate CPR for your own robot: turn the wheel by exactly one revolution, read
 
 ```
 v = 2π × r × (RPM / 60)        [m/s]
-  = 2π × 0.0195 × (RPM / 60)
+  = 2π × 0.019 × (RPM / 60)
 ```
+
+The radius 0.019 m is an estimate. Pololu gives the height of the treads on the assembled chassis as 39 mm, and the effective rolling radius is somewhat smaller. Measure it with a drive test on your robot.
 
 ### Distance from Ticks
 
@@ -116,7 +122,7 @@ where `N` = ticks counted, `t` = measurement interval in seconds.
 ## Known limitations
 
 - **No command timeout in `ZumoRos2.ino`.** The motors keep the last commanded speed until the next packet arrives, for example if the PC or the serial link fails.
-- **Motor class on the ATmega32U4.** `ZumoRos2.ino` uses `Zumo32U4Motors` from the Zumo 32U4 library, which drives the direction pins 15/16 of the Zumo 32U4 robot. The Zumo Shield v1.2 uses pins 7/8 (class `ZumoMotors` of the ZumoShield library), so reverse driving with this sketch on a shield has not been verified.
+- **Motor direction.** The sketches use the default of `ZumoMotors`: a positive speed drives the direction pin low. If a motor is installed the other way round, call `motors.flipLeftMotor(true)` or `motors.flipRightMotor(true)`.
 - **The serial protocol has no checksum.** Frames are recognised by their fixed length and the `0x02`/`0x03` markers; these byte values can also occur in the payload (for example a speed of 2).
 - **Counts per revolution has to be calibrated** for the individual robot (see above).
 
