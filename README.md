@@ -80,6 +80,7 @@ See [`examples/ZumoRos2/ZumoRos2.ino`](examples/ZumoRos2/ZumoRos2.ino) for a ful
 - Receives motor speed commands from a ROS 2 node over serial (7-byte framed protocol)
 - Replies with encoder counts (10-byte framed protocol)
 - Supports encoder reset via control byte
+- Stops the motors when no valid packet has arrived for 500 ms
 
 The sketch drives the motors with `ZumoMotors` from the ZumoShield library (direction pins 7 and 8, PWM on pins 9 and 10) on both the Uno and the Leonardo.
 
@@ -121,7 +122,6 @@ where `N` = ticks counted, `t` = measurement interval in seconds.
 
 ## Known limitations
 
-- **No command timeout in `ZumoRos2.ino`.** The motors keep the last commanded speed until the next packet arrives, for example if the PC or the serial link fails.
 - **Motor direction.** The sketches use the default of `ZumoMotors`: a positive speed drives the direction pin low. If a motor is installed the other way round, call `motors.flipLeftMotor(true)` or `motors.flipRightMotor(true)`.
 - **The serial protocol has no checksum.** Frames are recognised by their fixed length and the `0x02`/`0x03` markers; these byte values can also occur in the payload (for example a speed of 2).
 - **Counts per revolution has to be calibrated** for the individual robot (see above).

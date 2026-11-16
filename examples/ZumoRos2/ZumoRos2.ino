@@ -19,12 +19,20 @@
 // ctrl 0x11 = normal run (send encoder reply)
 // ctrl 0x12 = reset encoders (no reply)
 // The motor speeds are applied for every valid packet, whatever ctrl is.
+//
+// Safety stop: if no valid packet arrives for COMMAND_TIMEOUT_MS, the motors are
+// switched off. This covers a crashed PC program, a pulled USB cable and a
+// camera that has lost the line.
 
 ZumoMotors motors;
 Zumo328PEncoders encoders;
 
 static const uint8_t COMMAND_PACKET_SIZE = 7;  // PC -> Arduino
 static const uint8_t ENCODER_PACKET_SIZE = 10; // Arduino -> PC
+static const unsigned long COMMAND_TIMEOUT_MS = 500;
+
+static unsigned long lastCommandMs = 0;
+static bool motorsActive = false;  // true while a non-zero speed is applied
 
 void setup() {
     Serial.begin(115200);
@@ -33,6 +41,12 @@ void setup() {
 }
 
 void loop() {
+    // Unsigned subtraction keeps this correct when millis() wraps around.
+    if (motorsActive && (unsigned long)(millis() - lastCommandMs) > COMMAND_TIMEOUT_MS) {
+        motors.setSpeeds(0, 0);
+        motorsActive = false;
+    }
+
     if (Serial.available() < COMMAND_PACKET_SIZE) {
         return;
     }
@@ -56,6 +70,8 @@ void loop() {
     int16_t right_speed = (int16_t)((uint16_t)b2 | ((uint16_t)b3 << 8));
 
     motors.setSpeeds(left_speed, right_speed);
+    lastCommandMs = millis();
+    motorsActive = (left_speed != 0 || right_speed != 0);
 
     if (ctrl == 0x11) {
         sendEncoderData();
