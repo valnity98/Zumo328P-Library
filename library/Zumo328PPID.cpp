@@ -7,39 +7,38 @@ Zumo328PPID::Zumo328PPID(float maxSpeed)
     : maxSpeed(maxSpeed), leftSpeed(0), rightSpeed(0) {}
 
 // Computes left/right motor speeds around the base speed maxSpeed.
-// With aktiv == true, deltaT is measured with micros(); otherwise the
+// With measureTime == true, deltaT is measured with micros(); otherwise the
 // deltaT argument is used as given.
 void Zumo328PPID::ControlSpeed(uint16_t measured_position,
                                 uint16_t target_position,
                                 float kp, float kd,
-                                float deltaT, bool aktiv) {
+                                float deltaT, bool measureTime) {
 
-    int16_t error = (int16_t)measured_position - (int16_t)target_position;
+    // 32-bit arithmetic: the difference of two uint16_t values does not fit
+    // into an int16_t.
+    int32_t error = (int32_t)measured_position - (int32_t)target_position;
 
-    if (aktiv) {
+    if (measureTime) {
         unsigned long currT = micros();
-        if (firstCall) {
-            // No valid previous sample yet: avoid a derivative spike.
-            prevT     = currT;
-            firstCall = false;
-            lastError = error;
-            deltaT    = 1e-6f;
-        } else {
-            deltaT = (float)(currT - prevT) / 1.0e6f;  // unsigned: survives micros() wrap
-            prevT  = currT;
-        }
+        deltaT = (float)(currT - prevT) / 1.0e6f;  // unsigned: survives micros() wrap
+        prevT  = currT;
     }
 
-    // Two calls within the same microsecond would divide by zero.
-    if (deltaT <= 0.0f) {
-        deltaT = 1e-6f;
+    // Derivative term. On the first call there is no previous sample, and a
+    // time step of zero (two calls within the same microsecond) would divide
+    // by zero; in both cases the term is left out.
+    float derivative = 0.0f;
+    if (!firstCall && deltaT > 0.0f) {
+        derivative = (float)(error - lastError) / deltaT;
     }
-
-    int32_t speedDifference =
-        (int32_t)(kp * error) +
-        (int32_t)(kd * ((error - lastError) / deltaT));
-
+    firstCall = false;
     lastError = error;
+
+    // Limit the correction before converting it to an integer. A float that
+    // is out of range for int32_t would give an undefined result.
+    float correction = constrain(kp * (float)error + kd * derivative,
+                                 -2.0f * maxSpeed, 2.0f * maxSpeed);
+    int32_t speedDifference = (int32_t)correction;
 
     // Negative speeds are allowed so the robot can counter-steer in sharp curves.
     this->leftSpeed  = constrain((int32_t)maxSpeed + speedDifference,
