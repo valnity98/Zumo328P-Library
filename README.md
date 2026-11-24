@@ -1,0 +1,128 @@
+# Zumo328P Library
+
+An Arduino library for the wheel encoders of the Pololu Zumo Shield on an Arduino Leonardo (ATmega32U4), with a small PD controller for steering.
+
+It is a port of Pololu's Zumo 32U4 encoder library. I adapted it to the Zumo Shield v1.2, where the encoders are read differently, and added a discrete-time PD controller class for steering along a line. The ROS 2 robot does not use it, because it runs its PID controller on the PC. The code also compiles for the ATmega328P. The controller class is still called `Zumo328PPID`, but it has a proportional and a derivative term and no integral term.
+
+Written for the master's course *Autonomous Intelligent Systems* at Frankfurt UAS (winter semester 2024/25). The project is finished. The robot it was written for is in [ZumoRobot-ROS2](https://github.com/valnity98/ZumoRobot-ROS2).
+
+## Background
+
+Pololu's `Zumo32U4Encoders` reads the encoders of the Zumo 32U4, where an XOR of the two encoder channels is routed to a single interrupt pin. This library does not need an XOR chip: it attaches an external interrupt (`CHANGE`) to channel A of each encoder (D2 and D3 on the Leonardo) and reads channel B inside the interrupt service routine to determine the direction of rotation. Only the edges of channel A are counted (see [Counts per Revolution](#counts-per-revolution)). It is designed for use with the [Pololu Magnetic Encoder Pair Kit for Micro Metal Gearmotors, 12 CPR](https://www.pololu.com/product/3081).
+
+## Pin mapping
+
+| Signal | Leonardo pin | Notes |
+|---|---|---|
+| Left encoder A | D2 | External interrupt INT1, triggers on `CHANGE` |
+| Right encoder A | D3 | External interrupt INT0, triggers on `CHANGE` |
+| Left encoder B | D6 | Read in the ISR to determine direction. On the Leonardo the shield's buzzer is wired to D6 through the jumper labelled `32U4`: remove it |
+| Right encoder B | D12 | Read in the ISR to determine direction. Replaces the user push-button |
+
+On an Arduino Uno (ATmega328P) the buzzer jumper labelled `328P` connects the buzzer to D3 (right encoder A), so remove that one as well.
+
+On the Arduino Leonardo, D2 and D3 are also the I²C lines (SDA and SCL). With the encoders on these pins, I²C cannot be used, and that includes the compass and gyro on the Zumo Shield. D12 can no longer be used as the user button.
+
+## What it does
+
+- Counts the encoder ticks with interrupts (`attachInterrupt()`, the edges of channel A, direction from channel B). The 32-bit counters are read with interrupts disabled, and the previous interrupt state is restored afterwards.
+- Offers a small PD controller that turns the lateral line position error into left and right motor speeds. The full PID with anti-windup runs on the PC, in [ZumoRobot-ROS2](https://github.com/valnity98/ZumoRobot-ROS2), which this library was written for (binary serial protocol, see the example sketch).
+
+## Installation
+
+1. Download this repository as a ZIP file and add it in the Arduino IDE with Sketch > Include Library > Add .ZIP Library. Alternatively, clone it into your Arduino `libraries/` folder.
+2. Check that the folder is called `Zumo328P`.
+3. Install FastGPIO (used by the library) and ZumoShield (provides `ZumoMotors` for the example sketches) with the Library Manager of the Arduino IDE.
+4. Restart the Arduino IDE.
+
+## Usage
+
+### Encoder counting
+
+```cpp
+#include <Zumo328PEncoders.h>
+
+Zumo328PEncoders encoders;
+
+void loop() {
+    int32_t left  = encoders.getCountsLeft();
+    int32_t right = encoders.getCountsRight();
+    // or reset-on-read:
+    // int32_t left = encoders.getCountsAndResetLeft();
+}
+```
+
+### PD steering
+
+```cpp
+#include <Zumo328PPID.h>
+
+Zumo328PPID pd(200.0);  // base speed and speed limit
+
+void loop() {
+    // position: measured line position, 2500: centre of the line range
+    // (the 6-sensor Zumo reflectance array reports 0 to 5000)
+    pd.ControlSpeed(position, 2500, 0.25, 0.01);
+    motors.setSpeeds(pd.getLeftSpeed(), pd.getRightSpeed());
+}
+```
+
+The gains in this snippet are placeholders; tune `kp` and `kd` on your robot. The time step for the derivative is measured with `micros()` between two calls.
+
+### ROS 2 integration example
+
+The sketch [`examples/ZumoRos2/ZumoRos2.ino`](examples/ZumoRos2/ZumoRos2.ino) receives motor speeds from a ROS 2 node over serial (7-byte frames), answers with the encoder counts (10-byte frames), can reset the encoders and stops the motors when no valid packet has arrived for 500 ms.
+
+The sketch drives the motors with `ZumoMotors` from the ZumoShield library (direction pins 7 and 8, PWM on pins 9 and 10) on both the Uno and the Leonardo.
+
+## Calculations
+
+### Counts per revolution
+
+The number of counts per wheel revolution (CPR) depends on how the encoder signals are decoded. Pololu specifies 12 counts per motor revolution for the magnetic encoders when the edges of both channels are counted. This library counts only the edges of channel A, which gives 6 counts per motor revolution:
+
+```
+CPR = gear_ratio × 6 counts/rev
+    = 75.81 × 6 ≈ 455 counts/rev  (for a 75.81:1 gearmotor)
+```
+
+Calibrate CPR for your own robot: turn the wheel by exactly one revolution, read the tick difference, and use the measured value as `CPR` in the formulas below.
+
+### Linear speed
+
+```
+v = 2π × r × (RPM / 60)        [m/s]
+  = 2π × 0.019 × (RPM / 60)
+```
+
+The radius 0.019 m is an estimate. Pololu gives the height of the treads on the assembled chassis as 39 mm, and the effective rolling radius is somewhat smaller. Measure it with a drive test on your robot.
+
+### Distance from ticks
+
+```
+s = (N / CPR) × (2π × r)       [m]
+```
+
+### RPM from ticks
+
+```
+RPM = (N / CPR) × (60 / t)
+```
+
+where `N` = ticks counted, `t` = measurement interval in seconds.
+
+## Limitations
+
+- Motor direction: the sketches use the default of `ZumoMotors`: a positive speed drives the direction pin low. If a motor is installed the other way round, call `motors.flipLeftMotor(true)` or `motors.flipRightMotor(true)`.
+- No checksum: frames are recognised by their fixed length and the `0x02`/`0x03` markers; these byte values can also occur in the payload (for example a speed of 2).
+- Counts per revolution: they have to be calibrated for the individual robot (see above).
+
+## Third-party code
+
+`src/Zumo328PEncoders.cpp` and `src/Zumo328PEncoders.h` are derived from `Zumo32U4Encoders` in Pololu's [zumo-32u4-arduino-library](https://github.com/pololu/zumo-32u4-arduino-library) (MIT License, Copyright (c) 2015-2022 Pololu Corporation). See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the license text.
+
+## License
+
+Copyright (c) 2026 Mutasem Bader. All rights reserved.  
+Viewing is permitted. Copying, modifying, or submitting as own work is strictly prohibited.  
+See [LICENSE](LICENSE) for details.

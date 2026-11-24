@@ -1,0 +1,21 @@
+# Arduino build artifacts
+*.o
+*.a
+*.elf
+*.hex
+*.bin
+*.map
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# local backups of the repository (kept on this machine only)
+*.bundle
+_backup*/

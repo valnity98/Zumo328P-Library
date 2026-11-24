@@ -1,0 +1,20 @@
+Copyright (c) 2026 Mutasem Bader (https://github.com/valnity98)
+All Rights Reserved.
+
+This source code is the exclusive property of Mutasem Bader.
+Viewing this code is permitted, but the following are strictly prohibited:
+
+- Using, copying, or distributing this code in whole or in part
+- Submitting this code as your own work (e.g. in academic contexts)
+- Modifying and redistributing under a different name or identity
+- Commercial use of any kind
+
+This project was created for educational/university purposes.
+Any violation of these terms may constitute academic misconduct
+or copyright infringement.
+
+Third-party code:
+Parts of this repository that are derived from Pololu's Zumo 32U4 Arduino
+library (Zumo328PEncoders.cpp and Zumo328PEncoders.h) remain under the MIT
+License of that library; see THIRD-PARTY-NOTICES.md. For all other code, the
+terms above apply.
